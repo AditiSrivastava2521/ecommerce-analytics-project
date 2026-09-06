@@ -39,16 +39,9 @@ northwind.db  -> the SQLite database itself
 
 ## What actually came out of it
 
-Total revenue across the ~22 months in the data was **$1.27M**. The USA and Germany are the two biggest markets ($245.6K and $230.3K), which together is over a third of everything.
+Total revenue across the 22 months in the data was **$1.27M**. USA and Germany are the two biggest markets ($245.6K and $230.3K), which together is over a third of everything.
+What stood out to me was a single product, **Côte de Blaye**, brought in $141.4K. That's more than 11% of total revenue sitting in one SKU.
+Sales are also pretty concentrated on the people side since the top 3 of 9 employees account for roughly half of all revenue. 
+Retention isn't really the problem here since only 1 of 91 customers placed a single order and never came back, so almost everyone is a repeat buyer. 
 
-One thing that stood out: a single product, **Côte de Blaye**, brought in $141.4K on its own — that's more than 11% of total revenue sitting in one SKU. If I were advising the business, that's a concentration risk worth flagging, not just a "top product" to celebrate.
 
-Sales are also pretty concentrated on the people side — the top 3 of 9 employees (Margaret Peacock, Janet Leverling, Nancy Davolio) account for roughly half of all revenue. Might be worth digging into what they're doing differently before assuming it's random.
-
-Retention isn't really the problem here — only 1 of 91 customers placed a single order and never came back, so almost everyone is a repeat buyer. The RFM query is more useful for finding the customers who order rarely or spend little, rather than flagging churn.
-
-Delivery lateness sits between 3.6% and 5.1% across all three shippers, close enough that I wouldn't blame any one carrier — if delivery speed is a concern, the bottleneck is more likely internal order processing than the shipping leg itself.
-
-## Running it yourself
-
-Open the notebook in Colab, upload the `data_raw` CSVs to your Drive in the same folder structure, run all cells. It'll clean everything, build the SQLite db, run the queries, and drop CSVs into `excel/` for you to build on. Power BI can either read those CSVs directly or connect to `northwind.db`.
