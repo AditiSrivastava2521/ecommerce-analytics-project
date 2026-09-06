@@ -1,76 +1,54 @@
-# Northwind Traders — End-to-End Sales & Operations Analytics
+# Northwind Sales & Operations Analytics
 
-**An end-to-end data analytics project covering the full pipeline: Python (cleaning) → SQL (analysis) → Excel (ad hoc reporting) → Power BI (executive dashboard).**
+End-to-end analytics project on Northwind Traders, a wholesale food & beverage distributor. I wanted a project that touched the full stack an analyst actually uses day to day — not just one tool in isolation — so this goes from raw messy CSVs all the way to a Power BI dashboard.
 
-## Business Problem
+## The business question
 
-Northwind Traders is a wholesale food & beverage distribution company selling to 91 customers across 21 countries, through 9 sales employees, sourcing from 29 suppliers, and shipping via 3 carriers. Leadership wants a clear view of company-wide sales performance, which customers/products/regions drive revenue, how the sales team is performing, and where delivery operations are underperforming — to guide decisions on staffing, retention campaigns, and carrier contracts.
+Northwind sells to 91 customers in 21 countries, through 9 sales reps, sourcing from 29 suppliers, shipped by 3 carriers. If I were handed this data as a new analyst, the first thing leadership would want to know is: where's the revenue actually coming from, who's driving it, and where are the weak points (slow delivery, one-time customers, over-reliance on a single product)?
 
-## Tools Used
+## Tools
 
-| Stage | Tool |
-|---|---|
-| Data cleaning & transformation | Python (pandas) |
-| Data modeling & business queries | SQL (SQLite) |
-| Ad hoc analysis & pivot reporting | Excel |
-| Executive dashboard | Power BI |
+- **Python (pandas)** — cleaning and transforming the raw data
+- **SQL (SQLite)** — the actual analysis, joins, and window functions
+- **Excel** — quick pivot-table reporting on top of the SQL output
+- **Power BI** — the dashboard a manager would actually look at
 
-## Data Source
+## Data
 
-[Northwind sample database](https://github.com/neo4j-contrib/northwind-neo4j) — a public-domain relational dataset originally distributed with Microsoft Access, widely used for SQL/BI training. 9 relational tables: `customers`, `orders`, `order_details`, `products`, `employees`, `suppliers`, `categories`, `territories`, `employee_territories`. Data spans **July 1996 – May 1998**.
+Used the [Northwind sample database](https://github.com/neo4j-contrib/northwind-neo4j) — the classic Microsoft Access teaching dataset, now available as plain CSVs. 9 relational tables (customers, orders, order line items, products, employees, suppliers, categories, territories). Covers July 1996 through May 1998.
 
-## Pipeline
+Worth noting: the raw CSVs weren't actually clean. Several address fields have unescaped commas in them (e.g. "24, place Kléber") which breaks a straightforward `pd.read_csv()` — had to write a small fix to re-merge the split fields before anything else would load properly. That's in the notebook.
 
-```
-Raw CSVs (9 relational tables)
-        │
-        ▼
-Python/pandas — clean nulls, fix dtypes, resolve messy unescaped-comma
-fields in address columns, engineer revenue & delivery-time columns
-        │
-        ▼
-SQLite database — 7 loaded tables, 10 business queries using JOINs,
-GROUP BY, RANK()/LAG() window functions, and CTEs
-        │
-        ├──▶ Excel — pivot tables & charts on exported query results
-        │
-        └──▶ Power BI — KPI cards, trend lines, country map, DAX measures
-```
-
-## Repo Structure
+## What's in here
 
 ```
-├── notebooks/
-│   └── 01_northwind_end_to_end_analysis.ipynb   # full pipeline, runs in Google Colab
-├── sql/
-│   ├── schema.sql        # CREATE TABLE statements
-│   └── analysis.sql      # 10 business queries
-├── data_raw/             # original CSVs
-├── data_clean/           # cleaned CSVs after Python processing
-├── excel/                # exported query results + pivot workbook
-├── powerbi_export/       # .pbix file + dashboard screenshot
-└── README.md
+notebooks/    -> the full pipeline notebook (built for Google Colab)
+sql/          -> schema.sql and analysis.sql
+data_raw/     -> original CSVs
+data_clean/   -> cleaned versions after the pandas step
+excel/        -> exported query results + the pivot workbooks
+northwind.db  -> the SQLite database itself
 ```
 
-## Key Insights
+## Pipeline, roughly
 
-*(computed directly from the cleaned dataset — see `sql/analysis.sql` for the exact queries)*
+1. Load the 9 CSVs, fix the comma issue, handle nulls, convert dates, engineer a couple of derived columns (line revenue, delivery time in days).
+2. Load into SQLite and write 10 queries against it — monthly revenue, top products, revenue by country, employee performance (using `RANK()`), an RFM cut for customers, delivery lateness by shipper, category revenue, month-over-month growth (`LAG()`), one-time buyers, and top suppliers.
+3. Export a few of those query results and build pivot tables + conditional formatting in Excel.
+4. Pull the same CSVs into Power BI for a one-page dashboard: total revenue card, monthly trend line, revenue-by-country bar chart, top products table.
 
-1. **Total company revenue was $1,265,793** across the ~22-month period (Jul 1996–May 1998), with the **USA ($245.6K)** and **Germany ($230.3K)** as the top two revenue markets — together over 37% of total sales.
-2. **One product, Côte de Blaye, generated $141.4K alone** — over 11% of total company revenue from a single SKU, indicating meaningful concentration risk if that supplier relationship or stock availability were disrupted.
-3. **Beverages ($267.9K) and Dairy Products ($234.5K) are the top two categories**, together accounting for ~40% of revenue — useful for prioritizing supplier negotiations and inventory investment.
-4. **Sales are highly concentrated in 3 employees**: Margaret Peacock ($232.9K), Janet Leverling ($202.8K), and Nancy Davolio ($192.1K) — the top 3 of 9 employees drive roughly half of all company revenue, which may warrant analyzing what makes them effective for onboarding/training the rest of the team.
-5. **Only 1 of 91 customers (1.1%) placed just a single order**, suggesting strong overall repeat-purchase behavior — retention isn't the primary growth lever here; the RFM query (`sql/analysis.sql` Q5) can be used to find lower-frequency/lower-monetary customers worth targeted upsell campaigns instead.
-6. **Late delivery rates are fairly consistent across all 3 shippers (3.6%–5.1%)**, so delivery delays don't appear to stem from a single underperforming carrier — worth investigating order-processing time internally instead of the shipping leg.
+## What actually came out of it
 
-## How to Reproduce
+Total revenue across the ~22 months in the data was **$1.27M**. The USA and Germany are the two biggest markets ($245.6K and $230.3K), which together is over a third of everything.
 
-1. Open `notebooks/01_northwind_end_to_end_analysis.ipynb` in [Google Colab](https://colab.research.google.com).
-2. Upload the CSVs in `data_raw/` to your Google Drive under `ecommerce-analyst-project/data_raw/` (the notebook creates the rest of the folder structure automatically).
-3. Run all cells — this cleans the data, loads it into SQLite, runs the 10 business queries, and exports CSVs for Excel.
-4. Open the exported CSVs in Excel to build pivot tables (see `excel/` for reference).
-5. Open Power BI Desktop, connect to `data_clean/` or the exported query CSVs, and build the dashboard (KPI cards, monthly trend, country breakdown, top products, plus YoY/running-total DAX measures).
+One thing that stood out: a single product, **Côte de Blaye**, brought in $141.4K on its own — that's more than 11% of total revenue sitting in one SKU. If I were advising the business, that's a concentration risk worth flagging, not just a "top product" to celebrate.
 
-## Author
+Sales are also pretty concentrated on the people side — the top 3 of 9 employees (Margaret Peacock, Janet Leverling, Nancy Davolio) account for roughly half of all revenue. Might be worth digging into what they're doing differently before assuming it's random.
 
-*(Your name here)* — built as part of a data analyst portfolio to demonstrate an end-to-end analytics workflow across Python, SQL, Excel, and Power BI.
+Retention isn't really the problem here — only 1 of 91 customers placed a single order and never came back, so almost everyone is a repeat buyer. The RFM query is more useful for finding the customers who order rarely or spend little, rather than flagging churn.
+
+Delivery lateness sits between 3.6% and 5.1% across all three shippers, close enough that I wouldn't blame any one carrier — if delivery speed is a concern, the bottleneck is more likely internal order processing than the shipping leg itself.
+
+## Running it yourself
+
+Open the notebook in Colab, upload the `data_raw` CSVs to your Drive in the same folder structure, run all cells. It'll clean everything, build the SQLite db, run the queries, and drop CSVs into `excel/` for you to build on. Power BI can either read those CSVs directly or connect to `northwind.db`.
